@@ -1,0 +1,14 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Example configuration and generated dependency/build files"
+paths = [
+  '''(^|/)\.env\.example$''',
+  '''(^|/)package-lock\.json$''',
+  '''(^|/)go\.sum$''',
+  '''(^|/)node_modules/''',
+  '''(^|/)\.expo/''',
+  '''(^|/)dist/''',
+  '''(^|/)build/'''
+]

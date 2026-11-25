@@ -1,0 +1,5 @@
+{
+  "extends": "../Quick-Commerce/tsconfig.json",
+  "compilerOptions": { "noEmit": true, "baseUrl": ".", "types": [], "ignoreDeprecations": "6.0" },
+  "include": ["./**/*.ts", "./**/*.tsx", "../Quick-Commerce/src/**/*.ts", "../Quick-Commerce/src/**/*.tsx"]
+}

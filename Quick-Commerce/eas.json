@@ -1,0 +1,21 @@
+{
+  "cli": {
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "release-apk": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://quick-commerce-api-kas7pfeira-el.a.run.app"
+      }
+    },
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://quick-commerce-api-kas7pfeira-el.a.run.app"
+      }
+    }
+  }
+}

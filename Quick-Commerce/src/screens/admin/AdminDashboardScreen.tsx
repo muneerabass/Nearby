@@ -1,0 +1,200 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {
+  AdminScreenHeader,
+  AdminStatCard,
+  AppText,
+  Button,
+  FilterChips,
+  PressableScale,
+  StatusPill,
+  StoreSwitcher,
+} from '../../components';
+import { useAdmin } from '../../context/AdminContext';
+import { useAuth } from '../../context/AuthContext';
+import { colors, radius, shadows, spacing } from '../../theme';
+import type { AdminOrdersTab, AdminStackParamList } from '../../navigation/types';
+import * as adminService from '../../services/adminService';
+
+type Navigation = NativeStackNavigationProp<AdminStackParamList>;
+
+function Tile({ onPress, children }: { onPress: () => void; children: React.ReactNode }) {
+  return (
+    <PressableScale onPress={onPress} scaleTo={0.97} haptic="none" accessibilityRole="button" style={styles.tile}>
+      {children}
+    </PressableScale>
+  );
+}
+
+export function AdminDashboardScreen() {
+  const navigation = useNavigation<Navigation>();
+  const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const {
+    lowStockProducts,
+    outOfStockProducts,
+    isHydrated,
+    isRefreshing,
+    refresh,
+    activeStore,
+  } = useAdmin();
+  const [metrics, setMetrics] = useState<adminService.DashboardMetrics | null>(null);
+  const [scope, setScope] = useState<'all' | 'store'>('all');
+  const scopedStoreId = scope === 'store' ? activeStore?.id : undefined;
+  useEffect(() => { void adminService.getDashboard(scopedStoreId).then(setMetrics).catch(() => setMetrics(null)); }, [isRefreshing, scopedStoreId]);
+  const openOrders = useCallback((tab: AdminOrdersTab) => navigation.navigate('Orders', { tab }), [navigation]);
+
+  if (!isHydrated) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <ActivityIndicator color={colors.primary} style={styles.loader} />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xl }]} showsVerticalScrollIndicator={false}>
+        <AdminScreenHeader title={`Hi ${user?.name ?? 'admin'}`} subtitle="Running the Quick-Commerce back office." />
+
+        <StoreSwitcher style={styles.storeCard} />
+
+        {activeStore ? (
+          <View style={styles.scope}>
+            <FilterChips value={scope} onChange={setScope} options={[{ key: 'all', label: 'All stores' }, { key: 'store', label: activeStore.name }]} />
+          </View>
+        ) : null}
+
+        <View style={styles.statsRow}>
+          <Tile onPress={() => openOrders('all')}><AdminStatCard label="Orders today" value={metrics?.today_orders ?? 0} icon="receipt-outline" /></Tile>
+          <Tile onPress={() => openOrders('attention')}><AdminStatCard label="Needs attention" value={metrics?.rider_rejections_today ?? 0} icon="alert-circle-outline" tone="error" sublabel="rider rejections today" /></Tile>
+        </View>
+        <View style={[styles.statsRow, styles.statsSecondRow]}>
+          <Tile onPress={() => openOrders('open')}><AdminStatCard label="Waiting for rider" value={metrics?.pending_orders ?? 0} icon="time-outline" tone="warning" /></Tile>
+          <Tile onPress={() => openOrders('open')}><AdminStatCard label="In progress" value={(metrics?.accepted_orders ?? 0) + (metrics?.picked_up_orders ?? 0) + (metrics?.out_for_delivery_orders ?? 0)} icon="bicycle-outline" sublabel={`${metrics?.out_for_delivery_orders ?? 0} out for delivery`} /></Tile>
+        </View>
+        <View style={[styles.statsRow, styles.statsSecondRow]}>
+          <Tile onPress={() => openOrders('history')}><AdminStatCard label="Delivered" value={metrics?.completed_orders ?? 0} icon="checkmark-done-outline" tone="success" /></Tile>
+          <Tile onPress={() => openOrders('history')}><AdminStatCard label="Cancelled" value={metrics?.cancelled_orders ?? 0} icon="close-circle-outline" tone="error" /></Tile>
+        </View>
+        <View style={[styles.statsRow, styles.statsSecondRow]}>
+          <AdminStatCard label="Completed revenue" value={`₹${((metrics?.completed_revenue ?? 0) / 100).toFixed(0)}`} icon="cash-outline" />
+          <AdminStatCard label="COD collected today" value={`₹${((metrics?.today_cod_collections ?? 0) / 100).toFixed(0)}`} icon="wallet-outline" tone="success" />
+        </View>
+        <View style={[styles.statsRow, styles.statsSecondRow]}>
+          <AdminStatCard label="Customers" value={metrics?.total_customers ?? 0} icon="people-outline" tone="success" />
+          <AdminStatCard label="Active riders" value={metrics?.active_delivery_partners ?? 0} icon="people-circle-outline" tone="warning" />
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <AppText variant="heading3">Quick actions</AppText>
+        </View>
+        <View style={styles.actionsCard}>
+          <PressableScale style={styles.actionRow} onPress={() => navigation.navigate('ProductForm', undefined)}>
+            <View style={[styles.actionIcon, { backgroundColor: colors.primarySoft }]}>
+              <Ionicons name="add" size={20} color={colors.primary} />
+            </View>
+            <View style={styles.actionCopy}>
+              <AppText variant="bodyStrong">Add a product</AppText>
+              <AppText variant="caption" color="textSecondary">Create a new catalogue item</AppText>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+          </PressableScale>
+          <View style={styles.rowDivider} />
+          <PressableScale style={styles.actionRow} onPress={() => navigation.navigate('Stores')}>
+            <View style={[styles.actionIcon, { backgroundColor: colors.successSoft }]}>
+              <Ionicons name="storefront-outline" size={20} color={colors.success} />
+            </View>
+            <View style={styles.actionCopy}>
+              <AppText variant="bodyStrong">Manage stores</AppText>
+              <AppText variant="caption" color="textSecondary">Create new stores or toggle active</AppText>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+          </PressableScale>
+          <View style={styles.rowDivider} />
+          <PressableScale style={styles.actionRow} onPress={() => navigation.navigate('DeliveryUsers')}>
+            <View style={[styles.actionIcon, { backgroundColor: '#FBF0E0' }]}>
+              <Ionicons name="bicycle-outline" size={20} color={colors.warning} />
+            </View>
+            <View style={styles.actionCopy}>
+              <AppText variant="bodyStrong">Delivery riders</AppText>
+              <AppText variant="caption" color="textSecondary">Invite and assign to stores</AppText>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+          </PressableScale>
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <View>
+            <AppText variant="heading3">Needs attention</AppText>
+            <AppText variant="bodySmall" color="textSecondary">
+              Update stock before the next delivery run.
+            </AppText>
+          </View>
+          <AppText variant="buttonSmall" color="primary">
+            {lowStockProducts.length + outOfStockProducts.length} items
+          </AppText>
+        </View>
+        <View style={styles.alertCard}>
+          {[...outOfStockProducts, ...lowStockProducts].slice(0, 4).map((product, index, list) => {
+            const quantity = product.quantity ?? 0;
+            return (
+              <React.Fragment key={product.id}>
+                <View style={styles.stockRow}>
+                  <View style={styles.stockDot}>
+                    <Ionicons name={quantity === 0 ? 'close' : 'warning-outline'} size={16} color={quantity === 0 ? colors.error : colors.warning} />
+                  </View>
+                  <View style={styles.stockCopy}>
+                    <AppText variant="bodyStrong" numberOfLines={1}>
+                      {product.name}
+                    </AppText>
+                    <AppText variant="caption" color="textSecondary">
+                      {quantity} units remaining
+                    </AppText>
+                  </View>
+                  <StatusPill status={quantity === 0 ? 'out-of-stock' : 'low-stock'} />
+                </View>
+                {index < list.length - 1 ? <View style={styles.rowDivider} /> : null}
+              </React.Fragment>
+            );
+          })}
+          {lowStockProducts.length === 0 && outOfStockProducts.length === 0 ? (
+            <View style={styles.stockRow}>
+              <AppText color="textSecondary">All products are stocked and ready.</AppText>
+            </View>
+          ) : null}
+        </View>
+
+        <Button label="View full inventory" variant="secondary" size="md" onPress={() => navigation.navigate('AdminTabs', { screen: 'Inventory' })} style={styles.inventoryButton} />
+        <Button label="Refresh" variant="ghost" size="md" onPress={() => void refresh()} loading={isRefreshing} style={styles.refreshButton} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.background },
+  loader: { flex: 1 },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.xl },
+  storeCard: { marginTop: spacing.lg, marginBottom: spacing.sm },
+  scope: { marginHorizontal: -spacing.lg, marginBottom: spacing.xs },
+  tile: { flex: 1 },
+  statsRow: { flexDirection: 'row', gap: spacing.md },
+  statsSecondRow: { marginTop: spacing.md },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.xxxl, marginBottom: spacing.md },
+  actionsCard: { paddingHorizontal: spacing.lg, borderRadius: radius.md, backgroundColor: colors.surface, ...shadows.soft },
+  actionRow: { minHeight: 74, flexDirection: 'row', alignItems: 'center' },
+  actionIcon: { width: 40, height: 40, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },
+  actionCopy: { flex: 1 },
+  rowDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
+  alertCard: { paddingHorizontal: spacing.lg, paddingVertical: spacing.xs, borderRadius: radius.md, backgroundColor: colors.surface, ...shadows.soft },
+  stockRow: { minHeight: 68, flexDirection: 'row', alignItems: 'center' },
+  stockDot: { width: 32, height: 32, borderRadius: radius.pill, backgroundColor: colors.canvas, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },
+  stockCopy: { flex: 1, paddingRight: spacing.sm },
+  inventoryButton: { marginTop: spacing.lg },
+  refreshButton: { marginTop: spacing.sm },
+});

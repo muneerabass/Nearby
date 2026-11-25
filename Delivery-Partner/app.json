@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "Emblem Delivery Partner",
+    "slug": "emblem-delivery-partner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "emblem-rider",
+    "ios": { "bundleIdentifier": "com.emblem.deliverypartner" },
+    "android": { "package": "com.emblem.deliverypartner" }
+  }
+}

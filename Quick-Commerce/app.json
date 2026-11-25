@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "quick-commerce-app",
+    "slug": "quick-commerce-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.muneerabass.quick-commerce-app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We use your location to show nearby stores and deliver orders to you."
+      }
+    },
+    "android": {
+      "package": "com.muneerabass.quickcommerceapp",
+      "versionCode": 3,
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/icon.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-image",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "We use your location to show nearby stores and deliver orders to you."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "We need photo access to upload product images."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "950a7810-a417-4cd3-9360-113268e3fa8b"
+      }
+    },
+    "owner": "muneerabass"
+  }
+}
